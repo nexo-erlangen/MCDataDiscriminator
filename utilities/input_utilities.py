@@ -36,8 +36,8 @@ def parseInput():
                                      formatter_class=argparse.RawTextHelpFormatter)
 
     parser.add_argument('-o', '--out', dest='folderOUT', type=str, default='Dummy', help='folderOUT Path')
-    parser.add_argument('-i', '--in', dest='folderIN', type=str, default='/home/vault/capm/sn0515/PhD/DeepLearning/bbDiscriminator/Data/', help='folderIN Path')
-    parser.add_argument('-r', '--runs', dest='folderRUNS', type=str, default='/home/vault/capm/sn0515/PhD/DeepLearning/bbDiscriminator/TrainingRuns/', help='folderRUNS Path')
+    parser.add_argument('-i', '--in', dest='folderIN', type=str, default='/home/vault/capm/mppi060h/MCDataDiscriminator/Data/', help='folderIN Path')
+    parser.add_argument('-r', '--runs', dest='folderRUNS', type=str, default='/home/vault/capm/mppi060h/MCDataDiscriminator/TrainingRuns/', help='folderRUNS Path')
     parser.add_argument('-m', '--model', dest='folderMODEL', type=str, default='Dummy', help='folderMODEL Path')
     parser.add_argument('-t', '--targets', type=str, dest='var_targets', default='binary_bb_gamma', help='Targets to train the network against')
     parser.add_argument('-a', '--arch', type=str, dest='cnn_arch', default='DCNN', choices=['DCNN', 'ResNet', 'Inception'], help='Choose network architecture')
@@ -45,11 +45,11 @@ def parseInput():
     parser.add_argument('-e', '--epoch', type=int, dest='num_epoch', default=1, help='nb Epochs')
     parser.add_argument('-b', '--batch', type=int, dest='batchsize', default=16, help='Batch Size')
     parser.add_argument('-w', '--weights', dest='num_weights', type=int, default=0, help='Load weights from Epoch')
-    parser.add_argument('-s', '--source', dest='sources', default=['mixed'], nargs="*",
+    parser.add_argument('-s', '--source', dest='sources', default=['Th228'], nargs="*",
                         choices=['mixed', 'bb0n', 'bb0nE', 'bb2n', 'gamma', 'Th228', 'Th232', 'U238', 'Xe137', 'Co60', 'Ra226'], help='sources for training/validation')
-    parser.add_argument('-p', '--position', dest='position', default=['AllVessel'], nargs='*', choices=['Uni', 'S2', 'S5', 'S8', 'AllVessel'], help='source position')
+    parser.add_argument('-p', '--position', dest='position', default=['S5'], nargs='*', choices=['Uni', 'S2', 'S5', 'S8', 'AllVessel'], help='source position')
     parser.add_argument('-wp', '--wires', type=str, dest='wires', default='U', choices=['U', 'V', 'UV', 'U+V'], help='select wire planes')
-    parser.add_argument('-v', '--valid', dest='mode', default='train', choices=['train', 'mc', 'data'], help='mode of operation (train/eval (mc/data))')
+    parser.add_argument('-v', '--valid', dest='mode', default='train', choices=['train', 'valid'], help='mode of operation (train/eval (mc/data))')
     parser.add_argument('-l', '--log', type=str, dest='log', default='', nargs='*', help='Specify settings used for training to distinguish between runs')
     parser.add_argument('--tb', dest='tb_logger', action='store_true', help='activate tensorboard logger')
     parser.add_argument('-ev', '--events', dest='events', default=2000, type=int, help='number of validation events')
@@ -70,8 +70,8 @@ def parseInput():
         print ' '.join(args.log)
         print '>>>>>>>>>>>> <<<<<<<<<<<>>>>>>>>>>> <<<<<<<<<<<<'
 
-    if args.mode == 'data': mode = 'Data'
-    elif args.mode == 'train' or args.mode == 'mc': mode = 'MC'
+    if args.mode == 'valid': mode = 'mixed'
+    elif args.mode == 'train': mode = 'mixed'
     else: raise ValueError('check mode!')
 
     args.endings = {}

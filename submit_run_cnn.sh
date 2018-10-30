@@ -16,7 +16,7 @@
 # jobs always start in $HOME -
 #source $HPC/.bash_profile
 
-CodeFolder=$HPC/UVWireRecon/
+CodeFolder=$HPC/MCDataDiscriminator/
 cd ${CodeFolder}
 
 # run

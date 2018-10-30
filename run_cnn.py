@@ -13,8 +13,8 @@ from plot_scripts.plot_traininghistory import *
 from plot_scripts.plot_validation import *
 
 def main(args):
-    frac_train = {'mixedUniMC': 0.90}
-    frac_val   = {'mixedUniMC': 0.10}
+    frac_train = {'Th228S5mixed': 0.90}
+    frac_val   = {'Th228S5mixed': 0.10}
     # frac_train = {'mixedAllVesselMC': 0.90}
     # frac_val = {'mixedAllVesselMC': 0.10}
 
@@ -76,6 +76,7 @@ def executeCNN(args, files, var_targets, nn_arch, batchsize, epoch, mode, n_gpu=
     if mode == 'train':
         model.summary()
         try: # plot model, install missing packages with conda install if it throws a module error
+            raise OSError
             ks.utils.plot_model(model, to_file=args.folderOUT + '/plot_model.png',
                                 show_shapes=True, show_layer_names=False)
         except OSError:
@@ -221,7 +222,7 @@ def load_trained_model(args):
     return model
 
 def LRschedule_stepdecay(epoch):
-    initial_lrate = 0.01 # 0.001
+    initial_lrate = 0.001 # 0.001
     step_drop = 0.5
     step_epoch = 5.0
     step_decay_weight = 0.9

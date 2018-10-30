@@ -9,10 +9,10 @@ TIMESTAMP=$(timestamp)
 TIMESTAMPSEC=$(timestampSEC)
 
 #check ob auf GPU mit Hilfe von $HOST ?
-PWD=/home/vault/capm/sn0515/PhD/DeepLearning/bbDiscriminator/
+PWD=/home/vault/capm/mppi060h/MCDataDiscriminator/
 DATA="${PWD}Data/"
 FOLDERRUNS="${PWD}TrainingRuns/"
-CODEFOLDER=$HPC/bbDiscriminator/
+CODEFOLDER=$HPC/MCDataDiscriminator/
 
 array=( $* )
 for((i=0; i<$#; i++)) ; do

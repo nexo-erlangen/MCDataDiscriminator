@@ -66,17 +66,8 @@ def generate_batches_from_files(files, batchsize, wires=None, class_type=None, f
                     xs_i = np.swapaxes(xs_i, 0, 1)
                     xs_i = np.swapaxes(xs_i, 2, 3)
 
-                    # print xs_i.shape
-                    # xs_i = np.reshape(xs_i, (batchsize, 152, 350, -1))
-                    # xs_i = np.swapaxes(xs_i, 1, 2)
-                    # xs_i = np.squeeze(xs_i)
-                    # print xs_i.shape
-                    # exit()
-
                     ys_i = ys[ i : i + batchsize ]
 
-                # if yield_mc_info == 0: yield (xs_i, ys_i)
-                # elif yield_mc_info == 1: yield (xs_i, ys_i) + ({key: eventInfo[key][i: i + batchsize] for key in eventInfo.keys()},)
                 if   yield_mc_info == 0:    yield (list(xs_i), ys_i)
                 elif yield_mc_info == 1:    yield (list(xs_i), ys_i) + ({ key: eventInfo[key][i: i + batchsize] for key in eventInfo.keys() },)
                 elif yield_mc_info == 2:    yield { key: eventInfo[key][i: i + batchsize] for key in eventInfo.keys() }
@@ -95,7 +86,7 @@ def encode_targets(y_dict, batchsize, class_type=None):
         train_y = np.zeros(batchsize, dtype='float32')
     elif class_type == 'binary_bb_gamma':
         train_y = np.zeros((batchsize, 1), dtype='float32')
-        train_y[:, 0] = y_dict['ID']  # event ID (0: gamma, 1: bb)
+        train_y[:, 0] = y_dict['IsMC']  # event ID (0: Data, 1: MC)
     else:
         raise ValueError('Class type ' + str(class_type) + ' not supported!')
     return train_y
@@ -223,7 +214,7 @@ def getNumEvents(files):
     counter = 0
     for filename in files:
         f = h5py.File(str(filename), 'r')
-        counter += f['MCEventNumber'].shape[0]
+        counter += f['EventNumber'].shape[0]
         f.close()
     return counter
 
