@@ -9,6 +9,14 @@ import random
 import cPickle as pickle
 import os
 
+def main():
+    print 'starting'
+    file = '/home/vault/capm/mppi060h/MCDataDiscriminator/Data/Th228_WFs_S5_mixed_P2/0-shuffled.hdf5'
+    data = read_hdf5_file_to_dict(file, keys_to_read=['all'])
+    print data.keys()
+
+
+
 #------------- Function used for supplying images to the GPU -------------#
 def generate_batches_from_files(files, batchsize, wires=None, class_type=None, f_size=None, yield_mc_info=0):
     """
@@ -24,10 +32,7 @@ def generate_batches_from_files(files, batchsize, wires=None, class_type=None, f
     :return: tuple output: Yields a tuple which contains a full batch of images and labels (+ mc_info depending on yield_mc_info).
     """
 
-    try:
-        import keras as ks
-    except ImportError:
-        if not yield_mc_info == 2: raise ImportError
+    import keras as ks
 
     if isinstance(files, list): pass
     elif isinstance(files, basestring): files = [files]
@@ -237,4 +242,12 @@ def get_array_memsize(array, unit='KB'):
 
 def round_down(num, divisor):
     return num - (num%divisor)
+
+# ----------------------------------------------------------
+# Program Start
+# ----------------------------------------------------------
+if __name__ == '__main__':
+    main()
+    print '===================================== Program finished =============================='
+
 

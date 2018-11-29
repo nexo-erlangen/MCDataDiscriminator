@@ -12,7 +12,7 @@ import copy
 
 def create_shared_dcnn_network_2():
     kwargs = {'padding': 'same',
-              'dropout': 0.0,
+              'dropout': 0.3,
               'BN': False,
               'kernel_initializer': 'glorot_uniform',
               'kernel_regularizer': regularizers.l2(1.e-2)}
@@ -22,17 +22,20 @@ def create_shared_dcnn_network_2():
     input.append(Input(shape=(350, 38, 1), name='Wire_2'))
 
     layers = []
-    layers.append(Conv_block(16, filter_size=(5, 3), max_pooling=None, **kwargs))
-    layers.append(Conv_block(16, filter_size=(5, 3), max_pooling=(4, 2), **kwargs))
-    layers.append(Conv_block(32, filter_size=(5, 3), max_pooling=None, **kwargs))
-    layers.append(Conv_block(32, filter_size=(5, 3), max_pooling=(4, 2), **kwargs))
-    layers.append(Conv_block(64, filter_size=(3, 3), max_pooling=None, **kwargs))
-    layers.append(Conv_block(64, filter_size=(3, 3), max_pooling=(2, 2), **kwargs))
-    layers.append(Conv_block(128, filter_size=(3, 3), max_pooling=None, **kwargs))
-    layers.append(Conv_block(128, filter_size=(3, 3), max_pooling=(2, 2), **kwargs))
-    layers.append(Conv_block(256, filter_size=(3, 3), max_pooling=None, **kwargs))
-    #TEST
-    layers.append(Conv_block(256, filter_size=(3, 3), max_pooling=None, **kwargs))
+    #layers.append(Conv_block(8, filter_size=(2, 2), max_pooling=(4, 2), **kwargs))
+    #layers.append(Conv_block(16, filter_size=(4, 3), max_pooling=(4, 2), **kwargs))
+    layers.append(Conv_block(32, filter_size=(4, 3), max_pooling=(4, 2), **kwargs))
+    show_filter(layers, input)
+    layers.append(Conv_block(64, filter_size=(4, 3), max_pooling=(4, 2), **kwargs))
+    layers.append(Conv_block(128, filter_size=(5, 3), max_pooling=(4, 2), **kwargs))
+    # layers.append(Conv_block(64, filter_size=(3, 3), max_pooling=None, **kwargs))
+    # layers.append(Conv_block(64, filter_size=(3, 3), max_pooling=(2, 2), **kwargs))
+    # layers.append(Conv_block(128, filter_size=(3, 3), max_pooling=None, **kwargs))
+    # layers.append(Conv_block(128, filter_size=(3, 3), max_pooling=(2, 2), **kwargs))
+    layers.append(Conv_block(256, filter_size=(5, 3), max_pooling=(4, 2), **kwargs))
+
+    # #TEST
+    # layers.append(Conv_block(256, filter_size=(3, 3), max_pooling=None, **kwargs))
     layers.append([GlobalAveragePooling2D()])
     #TEST
     # layers.append(Conv_block(256, k_size=(3, 3), padding=padding, init=init, dropout=drop, max_pooling=(2, 2), activ=act, kernel_reg=regu))
@@ -45,6 +48,18 @@ def create_shared_dcnn_network_2():
     merge = Concatenate(name='Flat_1_and_2')(paths)
     output = Dense(2, name='Output', activation='softmax', kernel_initializer=kwargs['kernel_initializer'])(merge)
     return Model(inputs=input, outputs=output)
+
+def show_filter(layers, input):
+    conv_wire1 = layers.predict(input)
+    conv_wire1 = np.speeze(conv_wire1, axis=0)
+    conv_wire1 = conv_wire1.reshape(conv_wire1.shape[:2])
+    plt.immshow(conv_wire1)
+
+
+
+
+
+
 
 def create_shared_dcnn_network_4():
 

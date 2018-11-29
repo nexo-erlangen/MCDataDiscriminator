@@ -93,7 +93,7 @@ def parseInput():
     args.folderIN = folderIN
     args.folderMODEL = os.path.join(os.path.join(os.path.join(args.folderRUNS,''),args.folderMODEL),'')
     if args.mode == 'train': args.folderOUT = os.path.join(os.path.join(args.folderRUNS, args.folderOUT), '')
-    elif args.mode in ['mc', 'data']: args.folderOUT = args.folderMODEL
+    elif args.mode == 'valid': args.folderOUT = args.folderMODEL
     else: raise ValueError('wrong mode chosen: %s'%(args.mode))
 
     adjustPermissions(args.folderOUT)
@@ -152,7 +152,7 @@ def splitFiles(args, mode, frac_train, frac_val):
                 print "%s\t\t%i\t%i\t%i\t%i" % (ending, len(files[ending]), len(splitted_files['train'][ending]), len(splitted_files['val'][ending]), len(splitted_files['test'][ending]))
             pickle.dump(splitted_files, open(args.folderOUT + "splitted_files.p", "wb"))
             return splitted_files
-    elif mode == 'mc':
+    elif mode == 'valid':
         files_training = pickle.load(open(args.folderOUT + "splitted_files.p", "rb"))
         for ending in args.endings:
             if ending in files_training['val'].keys() or ending in files_training['test'].keys():
@@ -162,11 +162,11 @@ def splitFiles(args, mode, frac_train, frac_val):
                                  os.path.isfile(os.path.join(args.folderIN[ending], f))]
         print 'Input  File:\t\t', (args.folderOUT + "splitted_files.p")
         return files
-    elif mode == 'data':
-        for ending in args.endings:
-            files[ending] = [os.path.join(args.folderIN[ending], f) for f in os.listdir(args.folderIN[ending]) if
-                             os.path.isfile(os.path.join(args.folderIN[ending], f))]
-        return files
+    # elif mode == 'data':
+    #     for ending in args.endings:
+    #         files[ending] = [os.path.join(args.folderIN[ending], f) for f in os.listdir(args.folderIN[ending]) if
+    #                          os.path.isfile(os.path.join(args.folderIN[ending], f))]
+    #     return files
     else:
         raise ValueError('mode is not valid')
 

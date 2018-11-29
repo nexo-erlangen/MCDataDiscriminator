@@ -109,8 +109,12 @@ def executeCNN(args, files, var_targets, nn_arch, batchsize, epoch, mode, n_gpu=
         model = fit_model(args, model, files, batchsize, var_targets, epoch, shuffle, n_events=None, tb_logger=tb_logger)
         model.save_weights(args.folderOUT + "models/weights_final.hdf5")
         model.save(args.folderOUT + "models/model_final.hdf5")
-    elif mode in ['mc', 'data']:
-        print 'Validate on %s events'%(mode)
+    elif mode in ['valid']: #validation
+        # model.summary()
+        print 'Validate events'
+        print model
+        print model.get_layer(index=3)
+        exit()
 
         args.sources = "".join(sorted(args.sources))
         args.position = "".join(sorted(args.position))
@@ -123,11 +127,8 @@ def executeCNN(args, files, var_targets, nn_arch, batchsize, epoch, mode, n_gpu=
         # EVENT_INFO['DNNPredClass'] = EVENT_INFO['DNNPred'].argmax(axis=-1)
         # EVENT_INFO['DNNTrueClass'] = EVENT_INFO['DNNTrue'].argmax(axis=-1)
         # EVENT_INFO['DNNPredTrueClass'] = EVENT_INFO['DNNPred'][:, 1]
-        if mode in 'mc':
-            validation_mc_plots(args=args, folderOUT=args.folderOUT, data=EVENT_INFO)
-        if mode in 'data':
-            # TODO need data specific plots?
-            validation_mc_plots(args=args, folderOUT=args.folderOUT, data=EVENT_INFO)
+
+        validation_mc_plots(args=args, folderOUT=args.folderOUT, data=EVENT_INFO)
     else:
         raise ValueError('chosen mode (%s) not available. Choose between train/mc/data'%(mode))
 
@@ -265,3 +266,4 @@ if __name__ == '__main__':
         adjustPermissions(args.folderOUT)
 
     print '===================================== Program finished =============================='
+
