@@ -12,13 +12,14 @@ import os
 def main():
     print 'starting'
     file = '/home/vault/capm/mppi060h/MCDataDiscriminator/Data/Th228_WFs_S5_mixed_P2/0-shuffled.hdf5'
-    data = read_hdf5_file_to_dict(file, keys_to_read=['all'])
-    print data.keys()
+    gen = generate_batches_from_files(file, 32, wires='U', class_type='binary_bb_gamma', yield_mc_info=0)
+    xs_i, ys_i = gen.next()
+    print xs_i[0].shape, xs_i[1].shape, ys_i.shape
 
 
 
 #------------- Function used for supplying images to the GPU -------------#
-def generate_batches_from_files(files, batchsize, wires=None, class_type=None, f_size=None, yield_mc_info=0):
+def generate_batches_from_files(files, batchsize, wires=None, class_type=None, f_size=None, select_dict={}, yield_mc_info=0):
     """
     Generator that returns batches of images ('xs') and labels ('ys') from a h5 file.
     :param string files: Full filepath of the input h5 file, e.g. '[/path/to/file/file.hdf5]'.
@@ -53,28 +54,59 @@ def generate_batches_from_files(files, batchsize, wires=None, class_type=None, f
                 # warnings.warn( 'f_size=None could produce unexpected results if the f_size used in fit_generator(steps=int(f_size / batchsize)) with epochs > 1 '
                 #     'is not equal to the f_size of the true .h5 file. Should be ok if you use the tb_callback.')
 
-            lst = np.arange(0, f_size, batchsize)
-            random.shuffle(lst)
-
             # filter the labels we don't want for now
             for key in f.keys():
                 if key in ['wfs']: continue
                 eventInfo[key] = np.asarray(f[key])
             ys = encode_targets(eventInfo, f_size, class_type)
-            ys = ks.utils.to_categorical(ys, 2) #convert to one-hot vectors
 
-            for i in lst:
-                if not yield_mc_info == 2:
-                    if wires in ['U', 'V', 'UV', 'U+V']:
-                        xs_i = f['wfs'][i: i + batchsize, wireindex]
-                    else: raise ValueError('passed wire specifier need to be U/V/UV')
-                    xs_i = np.swapaxes(xs_i, 0, 1)
-                    xs_i = np.swapaxes(xs_i, 2, 3)
+            lst = select_events(eventInfo, select_dict=select_dict, shuffle=True)
+            # lst = np.arange(0, f_size, batchsize)
+            # random.shuffle(lst)
+            if not yield_mc_info in [-1,2]:
+                xs = np.asarray(f['wfs'])[:, wireindex]
+                z_temp = f['CCPosZ'][:]
+                for event in xrange(z_temp.shape[0]):
+                    if all(z >= 0. for z in z_temp[event]):
+                        xs[event, 1] = xs[event, 0]
+                    elif all(z <= 0. for z in z_temp[event]):
+                        xs[event, 0] = xs[event, 1]
+                    else:
+                        xs[event, 0] = xs[event, 1]
 
-                    ys_i = ys[ i : i + batchsize ]
+                    xt = xs[:,0,:,:,:]
 
-                if   yield_mc_info == 0:    yield (list(xs_i), ys_i)
-                elif yield_mc_info == 1:    yield (list(xs_i), ys_i) + ({ key: eventInfo[key][i: i + batchsize] for key in eventInfo.keys() },)
+                # xs = np.reshape(xs, (xs.shape[0], 76, 350, -1))
+
+            for i in np.arange(0, lst.size, batchsize):
+                batch = sorted(lst[i: i + batchsize])
+
+                # if len(batch) != batchsize: continue
+
+                if not yield_mc_info in [-1,2]:
+                    xs_i = xt[batch]
+                    ys_i = ys[batch]
+
+            # for i in lst:
+            #     if not yield_mc_info == 2:
+            #         # if wires in ['U', 'V', 'UV', 'U+V']:
+            #         #     z_temp = f['CCPosZ'][i: i + batchsize]
+            #         xs_i = f['wfs'][i: i + batchsize, wireindex]  # get_wfs(fIN, event) #, index='positive'))
+            #         #     for event in xrange(z_temp.shape[0]):
+            #         #         if all(z >= 0. for z in z_temp[event]):
+            #         #             xs_i[event, 0] = np.zeros(xs_i[event, 0].shape)
+            #         #         elif all(z <= 0. for z in z_temp[event]):
+            #         #             xs_i[event, 1] = np.zeros(xs_i[event, 1].shape)
+            #         #         else:
+            #         #             xs_i[event] = np.zeros(xs_i[event].shape)
+            #         # else: raise ValueError('passed wire specifier need to be U/V/UV')
+            #         # xs_i = np.swapaxes(xs_i, 0, 1)
+            #         # xs_i = np.swapaxes(xs_i, 2, 3)
+            #         xs_i = np.reshape(xs_i, (batchsize, 76, 350, -1))
+            #         ys_i = ys[ i : i + batchsize ]
+
+                if   yield_mc_info == 0:    yield (xs_i, ys_i)
+                elif yield_mc_info == 1:    yield (xs_i, ys_i) + ({ key: eventInfo[key][i: i + batchsize] for key in eventInfo.keys() },)
                 elif yield_mc_info == 2:    yield { key: eventInfo[key][i: i + batchsize] for key in eventInfo.keys() }
                 else:   raise ValueError("Wrong argument for yield_mc_info (0/1/2)")
             f.close()  # this line of code is actually not reached if steps=f_size/batchsize
@@ -90,8 +122,10 @@ def encode_targets(y_dict, batchsize, class_type=None):
     if class_type == None:
         train_y = np.zeros(batchsize, dtype='float32')
     elif class_type == 'binary_bb_gamma':
+        from keras.utils import to_categorical
         train_y = np.zeros((batchsize, 1), dtype='float32')
         train_y[:, 0] = y_dict['IsMC']  # event ID (0: Data, 1: MC)
+        train_y = to_categorical(train_y, 2)  # convert to one-hot vectors
     else:
         raise ValueError('Class type ' + str(class_type) + ' not supported!')
     return train_y
@@ -123,6 +157,28 @@ def read_EventInfo_from_files(files, maxNumEvents=0):
         return eventInfo
     else:
         return { key: value[ 0 : maxNumEvents ] for key,value in eventInfo.items() }
+
+def select_events(data_dict, select_dict={}, shuffle=True):
+    """
+    Encodes the labels (classes) of the images.
+    :param dict data_dict: Dictionary that contains ALL event class information for the events.
+    :param dict select_dict: Dictionary that contains keys to select events with their values (or low/up limit for range selections).
+    :param bool shuffle: Boolean to specify whether the index output list should be shuffled.
+    :return: list lst: List that holds the events indices that pass the given selection criteria.
+    """
+
+    mask = np.ones(data_dict.values()[0].shape[0], dtype=bool)
+    for key, value in select_dict.items():
+        if key not in data_dict.keys(): raise ValueError('Key not in data dict: %s'%(key))
+        if isinstance(value, list) and len(value) == 1:
+            mask = mask & (data_dict[key] == value[0])
+        elif isinstance(value, list) and len(value) == 2:
+            mask = mask & (data_dict[key] >= value[0]) & (data_dict[key] < value[1])
+        else:
+            raise ValueError('Key/Value pair is strange. key: %s . value: %s)'%(key, value))
+    lst = np.squeeze(np.argwhere(mask))
+    if shuffle: random.shuffle(lst)
+    return lst
 
 def write_dict_to_hdf5_file(data, file, keys_to_write=['all']):
     """

@@ -25,7 +25,7 @@ def create_shared_dcnn_network_2():
     #layers.append(Conv_block(8, filter_size=(2, 2), max_pooling=(4, 2), **kwargs))
     #layers.append(Conv_block(16, filter_size=(4, 3), max_pooling=(4, 2), **kwargs))
     layers.append(Conv_block(32, filter_size=(4, 3), max_pooling=(4, 2), **kwargs))
-    show_filter(layers, input)
+
     layers.append(Conv_block(64, filter_size=(4, 3), max_pooling=(4, 2), **kwargs))
     layers.append(Conv_block(128, filter_size=(5, 3), max_pooling=(4, 2), **kwargs))
     # layers.append(Conv_block(64, filter_size=(3, 3), max_pooling=None, **kwargs))
@@ -49,11 +49,7 @@ def create_shared_dcnn_network_2():
     output = Dense(2, name='Output', activation='softmax', kernel_initializer=kwargs['kernel_initializer'])(merge)
     return Model(inputs=input, outputs=output)
 
-def show_filter(layers, input):
-    conv_wire1 = layers.predict(input)
-    conv_wire1 = np.speeze(conv_wire1, axis=0)
-    conv_wire1 = conv_wire1.reshape(conv_wire1.shape[:2])
-    plt.immshow(conv_wire1)
+
 
 
 
