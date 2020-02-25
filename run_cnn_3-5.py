@@ -5,17 +5,18 @@ import h5py
 import innvestigate
 import innvestigate.utils as iutils
 import matplotlib.pyplot as plt
+import matplotlib.colors as colors
 from matplotlib import gridspec
 #from keras import backend as K
 
 folderRun = '/home/vault/capm/mppi060h/MCDataDiscriminator/TrainingRuns/181106-1720/'
 model_file = folderRun + 'models/model-000.hdf5'
 weights_file = folderRun + 'models/weights-080.hdf5'
-folderInput = '/home/vault/capm/mppi060h/MCDataDiscriminator/Data/mixed_WFs_S5_Th228_P2/'
+folderInput = '/home/vault/capm/mppi060h/MCDataDiscriminator/Data/Th228_WFs_S5_mixed_P2/'
 
 
 folderOUT = folderRun + 'output_training/'
-folderIN = '/home/vault/capm/mppi060h/MCDataDiscriminator/Data/mixed_WFs_S5_Th228_P2/'
+folderIN = '/home/vault/capm/mppi060h/MCDataDiscriminator/Data/Th228_WFs_S5_mixed_P2/'
 folderRUNS = '/home/vault/capm/mppi060h/MCDataDiscriminator/TrainingRuns/181106-1720/'
 folderMODEL = 'models/'
 num_weights = 0
@@ -43,25 +44,34 @@ def getFiles():
     files = [ os.path.join(folderIN,f) for f in os.listdir(folderIN) ]
     return files
 
+def plot_structure(model):
+    try: # plot model, install missing packages with conda install if it throws a module error
+        ks.utils.plot_model(model, to_file=folderRun + 'plot_model.png',
+                            show_shapes=True, show_layer_names=False)
+        print ('\n+++++++++ plot_model.png was created +++++++++')
+    except OSError:
+        print ('\nCould not produce plot_model.png')
 
 def executeCNN(files):
 
     model = ks.models.load_model(model_file)
     model.load_weights(weights_file)
     model.summary()
+    plot_structure(model)
 
     print ('Validate events')
     print (model)
 
     global folderRun
-    folderRun += "0validation/test/"
-    os.system("mkdir -p -m 770 %s " % (folderRun))
+    # folderRun += "0validation/test/"
+    folderRun += "0validation/test_dt/"
+    # os.system("mkdir -p -m 770 %s " % (folderRun))
     print(folderRun)
 
     gen = generate_batches_from_files(files, batchsize=batchsize, wires=wires, class_type=var_targets, yield_mc_info=0)
     for i in range(10):
         wfs, y = next(gen)
-        for mode in ['smoothgrad', 'gradient', 'deconvnet', 'input_t_gradient', 'integrated_gradients', 'deep_taylor']:
+        for mode in ['deep_taylor']:# ['smoothgrad', 'gradient', 'deconvnet', 'input_t_gradient', 'integrated_gradients', 'deep_taylor']:
             for layer in [-1, 0, 1]:
                 analyzer(model, mode, wfs, y, i, layer)
 
@@ -84,7 +94,7 @@ def analyzer(model, mode, wfs, label, event, index):
         label = 'class: MC event'
         label_file = 'MC'
     else:
-        label = 'class: real event'
+        label = 'class: Real event'
         label_file = 'Data'
     range_x = [0, 350]
     range_y = [0, 38]
@@ -94,33 +104,50 @@ def analyzer(model, mode, wfs, label, event, index):
     wfs /= np.max(wfs)
 
     plt.clf()
-    f, axarr = plt.subplots(1, 2)
-    f.set_size_inches(w=20., h=5.)
+    f, axarr = plt.subplots(2, 2, sharex='all', sharey='all')
+    f.set_size_inches(w=15., h=7.)
     gs = gridspec.GridSpec(2, 2)
     ax1 = plt.subplot(gs[0])
-    ax2 = plt.subplot(gs[1], sharey=ax1)
-    ax3 = plt.subplot(gs[2], sharex=ax1)
-    ax4 = plt.subplot(gs[3], sharex=ax2, sharey=ax3)
-    f.suptitle(label+', layer: %i'%(index+1), fontsize=14)
-    h1 = ax1.imshow(analysis[0].squeeze().T, extent=extent, interpolation='nearest', vmin=-1, vmax=1, cmap='seismic',
+    ax2 = plt.subplot(gs[1])#, sharey=ax1)
+    ax3 = plt.subplot(gs[2])#, sharex=ax1)
+    ax4 = plt.subplot(gs[3])#, sharex=ax2, sharey=ax3)
+    #f.suptitle(label+', analyzer: Deep Taylor', fontsize=14)# layer: %i'%(index+1), fontsize=14)
+    h1 = ax1.imshow(analysis[0].squeeze().T, extent=extent, interpolation='nearest',vmin=-1,vmax=1, cmap='seismic',
                     origin='lower', aspect=aspect)
-    h2 = ax2.imshow(analysis[1].squeeze().T, extent=extent, interpolation='nearest', vmin=-1, vmax=1, cmap='seismic',
+    h2 = ax2.imshow(analysis[1].squeeze().T, extent=extent, interpolation='nearest',vmin=-1,vmax=1, cmap='seismic',
                     origin='lower', aspect=aspect)
-    h3 = ax3.imshow(wfs[0].squeeze().T, extent=extent, interpolation='nearest', vmin=-1, vmax=1, cmap='seismic',
+    h3 = ax3.imshow(wfs[0].squeeze().T, extent=extent, interpolation='nearest', vmin=-1,vmax=1, cmap='seismic',
                     origin='lower', aspect=aspect)
-    h4 = ax4.imshow(wfs[1].squeeze().T, extent=extent, interpolation='nearest', vmin=-1, vmax=1, cmap='seismic',
+    h4 = ax4.imshow(wfs[1].squeeze().T, extent=extent, interpolation='nearest', vmin=-1,vmax=1, cmap='seismic',
                     origin='lower', aspect=aspect)
-    f.colorbar(h2, ax=ax2, shrink=0.6)
-    f.colorbar(h4, ax=ax4, shrink=0.6)
+    f.colorbar(h1, ax=ax1, shrink=0.6, ticks=[-1, 0, 1]).set_label(label=r'Deep Taylor', size=14)#, label=r'Deep Taylor', size=14 extend='both', )
+    # f.colorbar(h1).set_label(label=r'Deep Taylor', size=14)
+    f.colorbar(h2, ax=ax2, shrink=0.6, ticks=[-1, 0, 1]).set_label(label=r'Deep Taylor', size=14)#, label=r'Deep Taylor', size=14)
+    # f.colorbar(h2).set_label(label=r'Deep Taylor', size=14)
+    f.colorbar(h3, ax=ax3, shrink=0.6, ticks=[-1, 0, 1]).set_label(label=r'Input', size=14)#, label=r'Deep Taylor', size=14)
+    # f.colorbar(h3).set_label(label=r'Deep Taylor', size=14)
+    f.colorbar(h4, ax=ax4, shrink=0.6, ticks=[-1, 0, 1]).set_label(label=r'Input', size=14)#, label=r'Deep Taylor', size=14)
+    # f.colorbar(h4).set_label(label=r'Deep Taylor', size=14)
 
+
+    # ax1.get_xaxis().set_visible(False)
+    ax1.set_title('TPC 1', fontsize=14)
+    ax2.set_title('TPC 2', fontsize=14)
     ax1.set_xlim(range_x)
-    ax2.set_xlim(range_x)
     ax1.set_ylim(range_y)
+    ax2.set_xlim(range_x)
+    ax2.set_ylim(range_y)
+    ax3.set_xlim(range_x)
+    ax3.set_ylim(range_y)
+    ax4.set_xlim(range_x)
+    ax4.set_ylim(range_y)
 
-    ax1.set_ylabel(r'%s'%(mode), fontsize=14)
-    ax3.set_ylabel(r'Original', fontsize=14)
-    ax3.set_xlabel(r'arbitrary time 1 [$\mu$s]', fontsize=14)
-    ax4.set_xlabel(r'arbitrary time 2 [$\mu$s]', fontsize=14)
+    ax1.set_ylabel(r'Channel', fontsize=14)#%s'%(mode), fontsize=14)
+    ax2.set_ylabel(r'Channel', fontsize=14)
+    ax3.set_ylabel(r'Channel', fontsize=14)  # %s'%(mode), fontsize=14)
+    ax4.set_ylabel(r'Channel', fontsize=14)
+    ax3.set_xlabel(r'Time [$\mu$s]', fontsize=14)
+    ax4.set_xlabel(r'Time [$\mu$s]', fontsize=14)
 
     # plt.setp(ax2.get_yticklabels(), visible=False)
     # plot.imshow(analysis[0].squeeze(), origin='lower', cmap='seismic', interpolation='nearest')
@@ -160,7 +187,7 @@ def generate_batches_from_files(files, batchsize, wires=None, class_type=None, f
             if f_size is None: f_size = getNumEvents(filename)
 
             lst = np.arange(0, f_size, batchsize)
-            random.shuffle(lst)
+            # random.shuffle(lst)
 
             # filter the labels we don't want for now
             for key in f.keys():
